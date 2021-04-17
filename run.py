@@ -8,6 +8,7 @@ from data.dataset import RecommendationDataset, split_dataset
 from evaluation.evaluation import eval_pointwise, eval_top
 from models.model_sar import SarModel
 from models.model_svd import SvdModel
+from models.model_als import AlsModel
 
 TOP_K = 10
 SEED = 42
@@ -19,7 +20,8 @@ dataset.load()
 train, valid = split_dataset(dataset, ratio=0.75)
 
 models = [
-    SvdModel(epochs=5),
+    AlsModel(),
+    SvdModel(),
     SarModel(),
 ]
 
