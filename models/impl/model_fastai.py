@@ -42,7 +42,7 @@ class FastaiModel(Model):
                      test_df=dataset.data.copy(),
                      user_col=dataset.user_col,
                      item_col=dataset.item_col,
-                     prediction_col="prediction")
+                     prediction_col=self.prediction_col)
 
 
 def score(

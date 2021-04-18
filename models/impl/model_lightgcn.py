@@ -38,5 +38,5 @@ class LightGCNModel(Model):
     def _wrap_dataset(self, dataset: RecommendationDataset) -> ImplicitCF:
         return ImplicitCF(
             train=dataset.data, seed=42, col_user=dataset.user_col, col_item=dataset.item_col,
-            col_rating=dataset.score_col, col_prediction="prediction"
+            col_rating=dataset.score_col, col_prediction=self.prediction_col
         )
