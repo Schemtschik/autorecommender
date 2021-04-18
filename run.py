@@ -3,10 +3,14 @@ from time import time
 import numpy as np
 import pandas as pd
 
+import tensorflow as tf
+import torch
+
 from data.dataset import RecommendationDataset, split_without_cold_start
 from evaluation.evaluation import eval_pointwise, eval_top
 from models.model_als import AlsModel
 from models.model_bivae import BiVAEModel
+from models.model_lightgcn import LightGCNModel
 from models.model_sar import SarModel
 from models.model_svd import SvdModel
 from models.model_fastai import FastaiModel
@@ -17,6 +21,10 @@ TOP_K = 10
 SEED = 42
 
 np.random.seed(SEED)
+torch.manual_seed(SEED)
+torch.cuda.manual_seed(SEED)
+
+tf.get_logger().setLevel('ERROR')
 
 dataset = RecommendationDataset()
 dataset.load()
@@ -30,6 +38,7 @@ models = [
     NCFModel(),
     BPRModel(),
     BiVAEModel(),
+    LightGCNModel(TOP_K),
 ]
 
 results = []
