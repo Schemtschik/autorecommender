@@ -3,26 +3,31 @@ import pandas as pd
 
 from time import time
 
+import torch
 
 from data.dataset import RecommendationDataset, split_dataset
 from evaluation.evaluation import eval_pointwise, eval_top
 from models.model_sar import SarModel
 from models.model_svd import SvdModel
 from models.model_als import AlsModel
+from models.model_fastai import FastaiModel
 
 TOP_K = 10
 SEED = 42
 
 np.random.seed(SEED)
+torch.manual_seed(SEED)
+torch.cuda.manual_seed(SEED)
 
 dataset = RecommendationDataset()
 dataset.load()
 train, valid = split_dataset(dataset, ratio=0.75)
 
 models = [
-    AlsModel(),
-    SvdModel(),
-    SarModel(),
+    # AlsModel(),
+    # SvdModel(),
+    # SarModel(),
+    FastaiModel(epochs=1),
 ]
 
 results = []
@@ -36,7 +41,7 @@ for model in models:
     t1 = time()
     pred_top = model.predict_k(valid_for_top, TOP_K)
     t2 = time()
-    pred_scores = model.predict_scores(train)
+    pred_scores = model.predict_scores(valid)
     t3 = time()
     results.append({
         **{
@@ -45,7 +50,7 @@ for model in models:
             'predict_top_time': t2 - t1,
             'predict_all_time': t3 - t2
         },
-        **eval_pointwise(valid_for_top, pred_scores),
+        **eval_pointwise(valid, pred_scores),
         **eval_top(valid, pred_top, TOP_K),
     })
     model.on_stop()
