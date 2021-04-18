@@ -6,6 +6,7 @@ import pandas as pd
 from data.dataset import RecommendationDataset, split_without_cold_start
 from evaluation.evaluation import eval_pointwise, eval_top
 from models.model_als import AlsModel
+from models.model_bivae import BiVAEModel
 from models.model_sar import SarModel
 from models.model_svd import SvdModel
 from models.model_fastai import FastaiModel
@@ -28,6 +29,7 @@ models = [
     FastaiModel(),
     NCFModel(),
     BPRModel(),
+    BiVAEModel(),
 ]
 
 results = []

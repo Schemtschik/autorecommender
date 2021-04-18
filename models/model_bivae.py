@@ -1,4 +1,5 @@
 import pandas as pd
+import torch
 import numpy as np
 
 from data.dataset import RecommendationDataset
@@ -7,24 +8,28 @@ import cornac
 
 from recommenders.reco_utils.recommender.cornac.cornac_utils import predict, predict_ranking
 
-class BPRModel(Model):
-    def __init__(self, factors=200, epochs=100):
+class BiVAEModel(Model):
+    def __init__(self, factors=50, epochs=500):
         super().__init__()
         self.model = None
         self.factors = factors
         self.epochs = epochs
 
     def get_name(self) -> str:
-        return "BPR"
+        return "BiVAE"
 
     def train(self, dataset: RecommendationDataset) -> None:
-        self.model = cornac.models.BPR(
+        self.model = cornac.models.BiVAECF(
             k=self.factors,
-            max_iter=self.epochs,
-            learning_rate=0.01,
-            lambda_reg=0.001,
-            verbose=True,
-            seed=42
+            encoder_structure=[100],
+            act_fn="tanh",
+            likelihood="pois",
+            n_epochs=self.epochs,
+            batch_size=128,
+            learning_rate=0.001,
+            seed=42,
+            use_gpu=torch.cuda.is_available(),
+            verbose=True
         )
         self.model.fit(self._wrap_dataset(dataset))
 
