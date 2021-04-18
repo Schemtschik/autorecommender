@@ -10,6 +10,7 @@ from models.model_sar import SarModel
 from models.model_svd import SvdModel
 from models.model_fastai import FastaiModel
 from models.model_ncf import NCFModel
+from models.model_bpr import BPRModel
 
 TOP_K = 10
 SEED = 42
@@ -26,6 +27,7 @@ models = [
     SarModel(),
     FastaiModel(),
     NCFModel(),
+    BPRModel(),
 ]
 
 results = []
