@@ -13,9 +13,6 @@ class SarModel(Model):
     def get_name(self) -> str:
         return "SAR"
 
-    def is_top_predicted_by_train(self):
-        return False
-
     def train(self, dataset: RecommendationDataset) -> None:
         self.model = SARSingleNode(
             col_user=dataset.user_col,
