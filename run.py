@@ -9,6 +9,7 @@ from models.model_als import AlsModel
 from models.model_sar import SarModel
 from models.model_svd import SvdModel
 from models.model_fastai import FastaiModel
+from models.model_ncf import NCFModel
 
 TOP_K = 10
 SEED = 42
@@ -24,6 +25,7 @@ models = [
     SvdModel(),
     SarModel(),
     FastaiModel(),
+    NCFModel(),
 ]
 
 results = []
