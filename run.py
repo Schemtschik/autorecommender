@@ -8,6 +8,7 @@ from evaluation.evaluation import eval_pointwise, eval_top
 from models.model_als import AlsModel
 from models.model_sar import SarModel
 from models.model_svd import SvdModel
+from models.model_fastai import FastaiModel
 
 TOP_K = 10
 SEED = 42
@@ -22,6 +23,7 @@ models = [
     AlsModel(),
     SvdModel(),
     SarModel(),
+    FastaiModel(),
 ]
 
 results = []
