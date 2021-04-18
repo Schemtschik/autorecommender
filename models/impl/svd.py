@@ -1,7 +1,6 @@
 import pandas as pd
 import surprise
-
-from recommenders.reco_utils.recommender.surprise.surprise_utils import predict, compute_ranking_predictions
+from recommenders.reco_utils.recommender.surprise.surprise_utils import predict
 
 from data.dataset import RecommendationDataset
 from models.model import Model

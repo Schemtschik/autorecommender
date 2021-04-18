@@ -8,14 +8,14 @@ import torch
 
 from data.dataset import RecommendationDataset, split_without_cold_start
 from evaluation.evaluation import eval_pointwise, eval_top
-from models.impl.model_als import AlsModel
-from models.impl.model_bivae import BiVAEModel
-from models.impl.model_lightgcn import LightGCNModel
-from models.impl.model_sar import SarModel
-from models.impl.model_svd import SvdModel
-from models.impl.model_fastai import FastaiModel
-from models.impl.model_ncf import NCFModel
-from models.impl.model_bpr import BPRModel
+from models.impl.als import AlsModel
+from models.impl.cornac.bivae import BiVAEModel
+from models.impl.cornac.bpr import BPRModel
+from models.impl.deeprec.lightgcn import LightGCNModel
+from models.impl.fastai import FastaiModel
+from models.impl.ncf import NCFModel
+from models.impl.sar import SarModel
+from models.impl.svd import SvdModel
 
 TOP_K = 10
 SEED = 42
