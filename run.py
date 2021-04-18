@@ -1,14 +1,13 @@
+from time import time
+
 import numpy as np
 import pandas as pd
 
-from time import time
-
-
-from data.dataset import RecommendationDataset, split_dataset
+from data.dataset import RecommendationDataset, split_without_cold_start
 from evaluation.evaluation import eval_pointwise, eval_top
+from models.model_als import AlsModel
 from models.model_sar import SarModel
 from models.model_svd import SvdModel
-from models.model_als import AlsModel
 
 TOP_K = 10
 SEED = 42
@@ -17,7 +16,7 @@ np.random.seed(SEED)
 
 dataset = RecommendationDataset()
 dataset.load()
-train, valid = split_dataset(dataset, ratio=0.75)
+train_hot, valid_hot = split_without_cold_start(dataset, ratio=0.75)
 
 models = [
     AlsModel(),
@@ -29,14 +28,13 @@ results = []
 
 for model in models:
     print(model.get_name())
-    valid_for_top = train if model.is_top_predicted_by_train() else valid
     model.on_start()
     t0 = time()
-    model.train(train)
+    model.train(train_hot)
     t1 = time()
-    pred_top = model.predict_k(valid_for_top, TOP_K)
+    pred_top = model.predict_k(valid_hot, TOP_K)
     t2 = time()
-    pred_scores = model.predict_scores(train)
+    pred_scores = model.predict_scores(valid_hot)
     t3 = time()
     results.append({
         **{
@@ -45,8 +43,8 @@ for model in models:
             'predict_top_time': t2 - t1,
             'predict_all_time': t3 - t2
         },
-        **eval_pointwise(valid_for_top, pred_scores),
-        **eval_top(valid, pred_top, TOP_K),
+        **eval_pointwise(valid_hot, pred_scores),
+        **eval_top(valid_hot, pred_top, TOP_K),
     })
     model.on_stop()
 

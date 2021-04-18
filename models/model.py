@@ -10,8 +10,9 @@ class Model:
     def get_name(self) -> str:
         raise NotImplementedError
 
-    def is_top_predicted_by_train(self) -> bool:
-        return True
+    def is_cold_start_appliable(self) -> bool:
+        # TODO: override
+        return False
 
     def on_start(self) -> None:
         pass
