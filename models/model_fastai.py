@@ -44,28 +44,6 @@ class FastaiModel(Model):
                      item_col=dataset.item_col,
                      prediction_col="prediction")
 
-    def predict_k(self, dataset: RecommendationDataset, k: int) -> pd.DataFrame:
-        total_users, total_items = self.data.classes.values()
-        total_items = total_items[1:]
-        total_users = total_users[1:]
-
-        test_users = dataset.data[dataset.user_col].unique()
-        test_users = np.intersect1d(test_users, total_users)
-
-        users_items = cartesian_product(np.array(test_users), np.array(total_items))
-        users_items = pd.DataFrame(users_items, columns=[dataset.user_col, dataset.item_col])
-
-        training_removed = pd.merge(users_items, self.data_pd,
-                                    on=[dataset.user_col, dataset.item_col], how='left')
-        training_removed = training_removed[training_removed[dataset.score_col].isna()][[dataset.user_col, dataset.item_col]]
-
-        return score(self.learner,
-                     self.data,
-                     test_df=training_removed,
-                     user_col=dataset.user_col,
-                     item_col=dataset.item_col,
-                     prediction_col=self.prediction_col)
-
 
 def score(
         learner,

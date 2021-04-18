@@ -31,13 +31,7 @@ class NCFModel(Model):
         )
         self.model.fit(self._wrap_dataset(dataset))
 
-    def predict_scores(self, dataset: RecommendationDataset) -> pd.DataFrame:
-        return self._predict(dataset)
-
-    def predict_k(self, dataset: RecommendationDataset, k: int) -> pd.DataFrame:
-        return self._predict(dataset)
-
-    def _predict(self, dataset: RecommendationDataset):
+    def predict_scores(self, dataset: RecommendationDataset) -> pd:
         prediction = self.model.predict(dataset.data[dataset.user_col], dataset.data[dataset.item_col], True)
         result = dataset.data.copy()
         result["prediction"] = prediction

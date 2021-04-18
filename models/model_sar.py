@@ -28,6 +28,3 @@ class SarModel(Model):
 
     def predict_scores(self, dataset: RecommendationDataset) -> pd.DataFrame:
         return self.model.recommend_k_items(dataset.data, remove_seen=True)
-
-    def predict_k(self, dataset: RecommendationDataset, k: int) -> pd.DataFrame:
-        return self.model.recommend_k_items(dataset.data, remove_seen=True)

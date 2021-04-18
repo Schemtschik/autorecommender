@@ -34,9 +34,6 @@ class BiVAEModel(Model):
         self.model.fit(self._wrap_dataset(dataset))
 
     def predict_scores(self, dataset: RecommendationDataset) -> pd.DataFrame:
-        return predict(self.model, dataset.data, dataset.user_col, dataset.item_col, "prediction")
-
-    def predict_k(self, dataset: RecommendationDataset, k: int) -> pd.DataFrame:
         result = predict(self.model, dataset.data, dataset.user_col, dataset.item_col, "prediction")
         result.prediction = result.prediction.astype(np.float64)
         return result

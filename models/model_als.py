@@ -19,6 +19,7 @@ class AlsModel(Model):
 
     def on_start(self) -> None:
         self.spark_session = start_or_get_spark("ALS PySpark", memory="16g")
+        self.spark_session.sparkContext.setLogLevel("ERROR")
 
     def on_stop(self) -> None:
         self.spark_session.stop()
@@ -45,20 +46,3 @@ class AlsModel(Model):
 
     def predict_scores(self, test_ds: RecommendationDataset) -> pd.DataFrame:
         return self.model.transform(self._to_spark(test_ds.data)).cache().toPandas()
-
-    def predict_k(self, train_ds: RecommendationDataset, k: int) -> pd.DataFrame:
-        data = self._to_spark(train_ds.data)
-        users = data.select(train_ds.user_col).distinct()
-        items = data.select(train_ds.item_col).distinct()
-        user_item = users.crossJoin(items)
-        dfs_pred = self.model.transform(user_item)
-        dfs_pred_exclude_train = dfs_pred.alias("pred").join(
-            data.alias("train"),
-            (dfs_pred[train_ds.user_col] == data[train_ds.user_col])
-                & (dfs_pred[train_ds.item_col] == data[train_ds.item_col]),
-            how='outer'
-        )
-        top_all = dfs_pred_exclude_train.filter(dfs_pred_exclude_train["train.Rating"].isNull()) \
-            .select('pred.' + train_ds.user_col, 'pred.' + train_ds.item_col, 'pred.' + self.prediction_col)
-        top_all.cache().count()
-        return top_all.toPandas()

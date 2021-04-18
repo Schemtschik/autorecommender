@@ -32,13 +32,13 @@ train_hot, valid_hot = split_without_cold_start(dataset, ratio=0.75)
 
 models = [
     AlsModel(),
-    SvdModel(),
-    SarModel(),
-    FastaiModel(),
-    NCFModel(),
-    BPRModel(),
     BiVAEModel(),
+    BPRModel(),
+    FastaiModel(),
     LightGCNModel(TOP_K),
+    NCFModel(),
+    SarModel(),
+    SvdModel(),
 ]
 
 results = []
@@ -49,7 +49,7 @@ for model in models:
     t0 = time()
     model.train(train_hot)
     t1 = time()
-    pred_top = model.predict_k(valid_hot, TOP_K)
+    pred_top = model.predict_k(train_hot, TOP_K)
     t2 = time()
     pred_scores = model.predict_scores(valid_hot)
     t3 = time()

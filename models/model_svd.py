@@ -25,6 +25,3 @@ class SvdModel(Model):
 
     def predict_scores(self, dataset: RecommendationDataset) -> pd.DataFrame:
         return predict(self.svd, dataset.data, usercol=dataset.user_col, itemcol=dataset.item_col)
-
-    def predict_k(self, dataset: RecommendationDataset, k: int) -> pd.DataFrame:
-        return compute_ranking_predictions(self.svd, dataset.data, usercol=dataset.user_col, itemcol=dataset.item_col, remove_seen=True)
