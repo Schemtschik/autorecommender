@@ -1,22 +1,18 @@
 from typing import Tuple
 
-import pandas as pd
-from pandas import DataFrame
 import numpy as np
+import pandas as pd
 
-from recommenders.reco_utils.dataset import movielens
 
 class RecommendationDataset:
     def __init__(
             self,
-            variation: str = '100k',
-            user_col: str = 'UserId',
-            item_col: str = 'MovieId',
-            score_col: str = 'Rating',
-            timestamp_col: str = 'Timestamp',
-            data: DataFrame = None
+            user_col: str,
+            item_col: str,
+            score_col: str,
+            timestamp_col: str,
+            data: pd.DataFrame = None
     ):
-        self.variation = variation
         self.user_col = user_col
         self.item_col = item_col
         self.score_col = score_col
@@ -24,20 +20,10 @@ class RecommendationDataset:
         self.data = data
 
     def load(self) -> None:
-        self.data = movielens.load_pandas_df(
-            size=self.variation,
-            header=[self.user_col, self.item_col, self.score_col, self.timestamp_col]
-        )
+        raise NotImplementedError
 
-    def _wrap_data(self, data):
-        return RecommendationDataset(
-            variation=self.variation,
-            user_col=self.user_col,
-            item_col=self.item_col,
-            score_col=self.score_col,
-            timestamp_col=self.timestamp_col,
-            data=data
-        )
+    def wrap_data(self, data):
+        raise NotImplementedError
 
 
 def split_randomly(
@@ -45,7 +31,7 @@ def split_randomly(
         ratio: float
 ) -> Tuple[RecommendationDataset, RecommendationDataset]:
     mask = np.random.rand(len(dataset.data)) < ratio
-    return dataset._wrap_data(dataset.data[mask]), dataset._wrap_data(dataset.data[~mask])
+    return dataset.wrap_data(dataset.data[mask]), dataset.wrap_data(dataset.data[~mask])
 
 
 def split_without_cold_start(
@@ -69,4 +55,4 @@ def split_without_cold_start(
     assert set(train[dataset.item_col].unique()) == set(dataset.data[dataset.item_col].unique())
     assert len(pd.merge(train, valid, on=[dataset.user_col, dataset.item_col], how='inner')) == 0
     assert len(train) + len(valid) == len(dataset.data)
-    return dataset._wrap_data(train), dataset._wrap_data(valid)
+    return dataset.wrap_data(train), dataset.wrap_data(valid)

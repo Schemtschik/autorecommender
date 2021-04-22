@@ -2,11 +2,11 @@ from time import time
 
 import numpy as np
 import pandas as pd
-
 import tensorflow as tf
 import torch
 
-from data.dataset import RecommendationDataset, split_without_cold_start
+from data.dataset import split_without_cold_start
+from data.movielens import MovielensDataset
 from evaluation.evaluation import eval_pointwise, eval_top
 from models.impl.als import AlsModel
 from models.impl.cornac.bivae import BiVAEModel
@@ -26,7 +26,7 @@ torch.cuda.manual_seed(SEED)
 
 tf.get_logger().setLevel('ERROR')
 
-dataset = RecommendationDataset()
+dataset = MovielensDataset()
 dataset.load()
 train_hot, valid_hot = split_without_cold_start(dataset, ratio=0.75)
 

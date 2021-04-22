@@ -33,6 +33,6 @@ class Model:
         training_removed = pd.merge(users_items, dataset.data,
                                     on=[dataset.user_col, dataset.item_col], how='left')
         training_removed = training_removed[training_removed[dataset.score_col].isna()][[dataset.user_col, dataset.item_col]]
-        return self.predict_scores(dataset._wrap_data(training_removed))
+        return self.predict_scores(dataset.wrap_data(training_removed))
 
 
