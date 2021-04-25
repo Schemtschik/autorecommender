@@ -5,13 +5,14 @@ import pandas as pd
 import tensorflow as tf
 import torch
 
-from data.dataset import split_without_cold_start
+from data.dataset import split_without_cold_start, binarize_dataset
 from data.movielens import MovielensDataset
 from evaluation.evaluation import eval_pointwise, eval_top
 from models.impl.als import AlsModel
 from models.impl.cornac.bivae import BiVAEModel
 from models.impl.cornac.bpr import BPRModel
 from models.impl.deeprec.lightgcn import LightGCNModel
+from models.impl.deeprec.sequential import SequentialModel
 from models.impl.fastai import FastaiModel
 from models.impl.ncf import NCFModel
 from models.impl.sar import SarModel
@@ -31,27 +32,30 @@ dataset.load()
 train_hot, valid_hot = split_without_cold_start(dataset, ratio=0.75)
 
 models = [
-    AlsModel(),
-    BiVAEModel(),
-    BPRModel(),
-    FastaiModel(),
-    LightGCNModel(TOP_K),
-    NCFModel(),
-    SarModel(),
-    SvdModel(),
+    # AlsModel(),
+    # BiVAEModel(),
+    # BPRModel(),
+    # FastaiModel(),
+    # LightGCNModel(TOP_K),
+    # NCFModel(),
+    # SarModel(),
+    # SvdModel(),
+    SequentialModel()
 ]
 
 results = []
 
 for model in models:
+    train = binarize_dataset(train_hot, 3.5) if model.is_binary() else train_hot
+    valid = binarize_dataset(valid_hot, 3.5) if model.is_binary() else valid_hot
     print(model.get_name())
     model.on_start()
     t0 = time()
-    model.train(train_hot)
+    model.train(train)
     t1 = time()
-    pred_top = model.predict_k(train_hot, TOP_K)
+    pred_top = model.predict_k(train, TOP_K)
     t2 = time()
-    pred_scores = model.predict_scores(valid_hot)
+    pred_scores = model.predict_scores(valid)
     t3 = time()
     results.append({
         **{
@@ -60,8 +64,8 @@ for model in models:
             'predict_top_time': t2 - t1,
             'predict_all_time': t3 - t2
         },
-        **eval_pointwise(valid_hot, pred_scores),
-        **eval_top(valid_hot, pred_top, TOP_K),
+        **eval_pointwise(valid, pred_scores),
+        **eval_top(valid, pred_top, TOP_K),
     })
     model.on_stop()
 

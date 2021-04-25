@@ -14,7 +14,7 @@ class MovielensDataset(RecommendationDataset):
             timestamp_col: str = 'Timestamp',
             data: pd.DataFrame = None
     ):
-        super().__init__(user_col, item_col, score_col, timestamp_col, data)
+        super().__init__(user_col, item_col, score_col, timestamp_col, None, data)
         self.variation = variation
         self.user_col = user_col
         self.item_col = item_col

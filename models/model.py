@@ -17,6 +17,9 @@ class Model:
     def on_stop(self) -> None:
         pass
 
+    def is_binary(self) -> bool:
+        return False
+
     def train(self, dataset: RecommendationDataset) -> None:
         raise NotImplementedError
 

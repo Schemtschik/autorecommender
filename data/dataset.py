@@ -10,13 +10,15 @@ class RecommendationDataset:
             user_col: str,
             item_col: str,
             score_col: str,
-            timestamp_col: str,
+            timestamp_col: str = None,
+            category_col: str = None,
             data: pd.DataFrame = None
     ):
         self.user_col = user_col
         self.item_col = item_col
         self.score_col = score_col
         self.timestamp_col = timestamp_col
+        self.category_col = category_col
         self.data = data
 
     def load(self) -> None:
@@ -56,3 +58,9 @@ def split_without_cold_start(
     assert len(pd.merge(train, valid, on=[dataset.user_col, dataset.item_col], how='inner')) == 0
     assert len(train) + len(valid) == len(dataset.data)
     return dataset.wrap_data(train), dataset.wrap_data(valid)
+
+
+def binarize_dataset(dataset: RecommendationDataset, threshold: float) -> RecommendationDataset:
+    df = dataset.data.copy()
+    df[dataset.score_col] = (df[dataset.score_col] > threshold).astype(np.int)
+    return dataset.wrap_data(df)
