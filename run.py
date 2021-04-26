@@ -6,7 +6,8 @@ import tensorflow as tf
 import torch
 
 from data.dataset import split_without_cold_start
-from data.movielens import MovielensDataset
+from data.impl.amazon import AmazonReviewsDataset
+from data.impl.movielens import MovielensDataset
 from evaluation.evaluation import eval_pointwise, eval_top
 from models.impl.als import AlsModel
 from models.impl.cornac.bivae import BiVAEModel
@@ -26,6 +27,10 @@ torch.cuda.manual_seed(SEED)
 
 tf.get_logger().setLevel('ERROR')
 
+dataset = AmazonReviewsDataset()
+dataset.load()
+exit(0)
+
 dataset = MovielensDataset()
 dataset.load()
 train_hot, valid_hot = split_without_cold_start(dataset, ratio=0.75)
@@ -40,6 +45,7 @@ models = [
     SarModel(),
     SvdModel(),
 ]
+
 
 results = []
 
