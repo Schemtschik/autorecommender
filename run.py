@@ -5,8 +5,8 @@ import pandas as pd
 import tensorflow as tf
 import torch
 
-from data.dataset import split_without_cold_start
-from data.movielens import MovielensDataset
+from data.dataset import split_without_cold_start, RecommendationDataset
+from data.impl.movielens import MovielensDataset
 from evaluation.evaluation import eval_pointwise, eval_top
 from models.impl.als import AlsModel
 from models.impl.cornac.bivae import BiVAEModel
@@ -26,17 +26,27 @@ torch.cuda.manual_seed(SEED)
 
 tf.get_logger().setLevel('ERROR')
 
-dataset = MovielensDataset()
+# dataset = MovielensDataset()
+df = pd.read_csv("tmp/kkbox-music-recommendation-challenge/train")[["msno", "song_id", "target"]]
+df.target = df.target.astype(np.float64)
+df.msno = df.msno.apply(lambda x: hash(x)).astype(np.int32)
+df.song_id = df.song_id.apply(lambda x: hash(x)).astype(np.int32)
+dataset = RecommendationDataset(
+    user_col="msno",
+    item_col="song_id",
+    score_col="target",
+    data=df
+)
 dataset.load()
 train_hot, valid_hot = split_without_cold_start(dataset, ratio=0.75)
 
 models = [
-    AlsModel(),
+    # AlsModel(),
     BiVAEModel(),
     BPRModel(),
     FastaiModel(),
     LightGCNModel(TOP_K),
-    NCFModel(),
+    # NCFModel(),
     SarModel(),
     SvdModel(),
 ]

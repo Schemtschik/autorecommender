@@ -10,7 +10,7 @@ class RecommendationDataset:
             user_col: str,
             item_col: str,
             score_col: str,
-            timestamp_col: str,
+            timestamp_col: str = None,
             data: pd.DataFrame = None
     ):
         self.user_col = user_col
@@ -20,10 +20,10 @@ class RecommendationDataset:
         self.data = data
 
     def load(self) -> None:
-        raise NotImplementedError
+        pass
 
     def wrap_data(self, data):
-        raise NotImplementedError
+        return RecommendationDataset(self.user_col, self.item_col, self.score_col, self.timestamp_col, data)
 
 
 def split_randomly(
