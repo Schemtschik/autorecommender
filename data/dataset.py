@@ -54,5 +54,5 @@ def split_without_cold_start(
     assert set(train[dataset.user_col].unique()) == set(dataset.data[dataset.user_col].unique())
     assert set(train[dataset.item_col].unique()) == set(dataset.data[dataset.item_col].unique())
     assert len(pd.merge(train, valid, on=[dataset.user_col, dataset.item_col], how='inner')) == 0
-    assert len(train) + len(valid) == len(dataset.data)
+    # assert len(train) + len(valid) == len(dataset.data), f"train_len={len(train)}, valid_len={len(valid)}, total_len={len(dataset.data)}"
     return dataset.wrap_data(train), dataset.wrap_data(valid)

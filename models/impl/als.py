@@ -8,10 +8,10 @@ from recommenders.reco_utils.common.spark_utils import start_or_get_spark
 
 
 class AlsModel(Model):
-    def __init__(self, top_size: int = 10, max_iter: int = 15, seed: int = 42):
+    def __init__(self, top_size: int = 10, epochs: int = 15, seed: int = 42):
         super().__init__()
         self.top_size = top_size
-        self.max_iter = max_iter
+        self.epochs = epochs
         self.seed = seed
 
         self.spark_session = None
@@ -33,7 +33,7 @@ class AlsModel(Model):
     def train(self, train_ds: RecommendationDataset) -> None:
         self.model = ALS(
             rank=self.top_size,
-            maxIter=self.max_iter,
+            maxIter=self.epochs,
             implicitPrefs=False,
             regParam=0.05,
             coldStartStrategy='drop',

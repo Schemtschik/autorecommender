@@ -27,14 +27,14 @@ torch.cuda.manual_seed(SEED)
 tf.get_logger().setLevel('ERROR')
 
 # dataset = MovielensDataset()
-df = pd.read_csv("tmp/kkbox-music-recommendation-challenge/train")[["msno", "song_id", "target"]]
-df.target = df.target.astype(np.float64)
-df.msno = df.msno.apply(lambda x: hash(x)).astype(np.int32)
-df.song_id = df.song_id.apply(lambda x: hash(x)).astype(np.int32)
+df = pd.read_csv("tmp/event-recommendation-engine-challenge/train")[["user", "event", "interested"]]
+df.interested = df.interested.astype(np.float64)
+# df.msno = df.msno.apply(lambda x: hash(x)).astype(np.int32)
+# df.song_id = df.song_id.apply(lambda x: hash(x)).astype(np.int32)
 dataset = RecommendationDataset(
-    user_col="msno",
-    item_col="song_id",
-    score_col="target",
+    user_col="user",
+    item_col="event",
+    score_col="interested",
     data=df
 )
 dataset.load()
@@ -42,13 +42,13 @@ train_hot, valid_hot = split_without_cold_start(dataset, ratio=0.75)
 
 models = [
     # AlsModel(),
-    BiVAEModel(),
-    BPRModel(),
-    FastaiModel(),
+    BiVAEModel(epochs=1),
+    BPRModel(epochs=1),
+    FastaiModel(epochs=1),
     LightGCNModel(TOP_K),
     # NCFModel(),
     SarModel(),
-    SvdModel(),
+    SvdModel(epochs=1),
 ]
 
 results = []
