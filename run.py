@@ -8,6 +8,7 @@ import torch
 from data.dataset import split_without_cold_start
 from data.movielens import MovielensDataset
 from evaluation.evaluation import eval_pointwise, eval_top
+from models.ensembling.ensemble_model import EnsembleModel
 from models.impl.als import AlsModel
 from models.impl.cornac.bivae import BiVAEModel
 from models.impl.cornac.bpr import BPRModel
@@ -41,11 +42,15 @@ models = [
     SvdModel(),
 ]
 
+ensemble = EnsembleModel(models, filter_unnecessary=False)
+
 results = []
 
 for model in models:
-    print(model.get_name())
     model.on_start()
+
+for model in models + [ensemble]:
+    print(model.get_name())
     t0 = time()
     model.train(train_hot)
     t1 = time()
@@ -63,6 +68,14 @@ for model in models:
         **eval_pointwise(valid_hot, pred_scores),
         **eval_top(valid_hot, pred_top, TOP_K),
     })
+
+for model in models:
     model.on_stop()
 
-print(pd.DataFrame.from_records(results))
+results_df = pd.DataFrame.from_records(results)
+ensemble_weights = list(ensemble.ensemble_model.coef_) + [sum(ensemble.ensemble_model.coef_)]
+ensemble_weights = np.array(ensemble_weights)
+ensemble_weights = 2 * ensemble_weights / ensemble_weights.sum()
+results_df['ensemble_weight'] = ensemble_weights
+results_df.to_csv('results.tsv', sep='\t', index=False)
+print(results_df.head())
