@@ -19,7 +19,7 @@ class EnsembleModel(Model):
         if self.filter_unnecessary:
             new_models = []
             for i in range(len(self.models)):
-                if self.ensemble_model.coef_[i] > 1e4:
+                if abs(self.ensemble_model.coef_[i]) > 1e4:
                     new_models.append(self.models[i])
             self.models = new_models
             self._train_once(dataset)
