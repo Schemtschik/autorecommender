@@ -6,7 +6,7 @@ import tensorflow as tf
 import torch
 
 from data.dataset import split_without_cold_start
-from data.movielens import MovielensDataset
+from data.impl.movielens import MovielensDataset
 from evaluation.evaluation import eval_pointwise, eval_top
 from models.ensembling.ensemble_model import EnsembleModel
 from models.impl.als import AlsModel
@@ -42,7 +42,7 @@ models = [
     SvdModel(),
 ]
 
-ensemble = EnsembleModel(models, filter_unnecessary=False)
+ensemble = EnsembleModel(models)
 
 results = []
 
@@ -73,9 +73,11 @@ for model in models:
     model.on_stop()
 
 results_df = pd.DataFrame.from_records(results)
-ensemble_weights = list(ensemble.ensemble_model.coef_) + [sum(ensemble.ensemble_model.coef_)]
-ensemble_weights = np.array(ensemble_weights)
-ensemble_weights = 2 * ensemble_weights / ensemble_weights.sum()
-results_df['ensemble_weight'] = ensemble_weights
+results_df['ensemble_weight'] = np.zeros(len(results_df))
+for i in range(len(ensemble.models)):
+    results_df[results_df.name == ensemble.models[i].get_name()].ensemble_weight = ensemble.ensemble_model.coef_[i]
+results_df.ensemble_weight = results_df.ensemble_weight / results_df.ensemble_weight.sum()
+results_df[results_df.name == ensemble.get_name()].ensemble_weight = 1
 results_df.to_csv('results.tsv', sep='\t', index=False)
-print(results_df.head())
+print(results_df)
+print("Models selected: ", [x.get_name() for x in ensemble.models])
