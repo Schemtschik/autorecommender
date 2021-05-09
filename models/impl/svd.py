@@ -23,4 +23,4 @@ class SvdModel(Model):
         self.svd.fit(train_set)
 
     def predict_scores(self, dataset: RecommendationDataset) -> pd.DataFrame:
-        return predict(self.svd, dataset.data, usercol=dataset.user_col, itemcol=dataset.item_col)
+        return predict(self.svd, dataset.data, usercol=dataset.user_col, itemcol=dataset.item_col, predcol=self.prediction_col)
