@@ -6,6 +6,7 @@ import tensorflow as tf
 import torch
 
 from data.dataset import split_without_cold_start, RecommendationDataset
+from data.encoded_dataset import EncodedRecommendationDataset
 from data.impl.movielens import MovielensDataset
 from evaluation.evaluation import eval_pointwise, eval_top
 from models.ensembling.ensemble_model import EnsembleModel
@@ -27,37 +28,38 @@ torch.cuda.manual_seed(SEED)
 
 tf.get_logger().setLevel('ERROR')
 
-# dataset = MovielensDataset()
-df = pd.read_csv("tmp/event-recommendation-engine-challenge/train")[["user", "event", "interested"]]
+df = pd.read_csv("tmp/event-recommendation-engine-challenge/train")[["user", "event", "interested", "timestamp"]]
 df.interested = df.interested.astype(np.float64)
-# df.msno = df.msno.apply(lambda x: hash(x)).astype(np.int32)
-# df.song_id = df.song_id.apply(lambda x: hash(x)).astype(np.int32)
+df.timestamp = np.zeros(len(df.timestamp))
+df.timestamp = df.timestamp.astype(np.int64)
 dataset = RecommendationDataset(
     user_col="user",
     item_col="event",
     score_col="interested",
+    timestamp_col="timestamp",
     data=df
 )
 dataset.load()
+dataset = EncodedRecommendationDataset.of(dataset)
+dataset.print_stats()
 train_hot, valid_hot = split_without_cold_start(dataset, ratio=0.75)
 
 models = [
-    # AlsModel(),
-    BiVAEModel(epochs=1),
-    BPRModel(epochs=1),
-    FastaiModel(epochs=1),
-    LightGCNModel(TOP_K),
+    AlsModel(),
+    BiVAEModel(epochs=50),
+    BPRModel(),
+    FastaiModel(),
+    # LightGCNModel(TOP_K),
     # NCFModel(),
     SarModel(),
-    SvdModel(epochs=1),
+    SvdModel(),
 ]
 
-ensemble = EnsembleModel(models)
+ensemble = EnsembleModel(models, filter_unnecessary=False)
 
 results = []
 
 for model in models:
-    print(model.get_name())
     model.on_start()
 
 for model in models + [ensemble]:
@@ -65,19 +67,19 @@ for model in models + [ensemble]:
     t0 = time()
     model.train(train_hot)
     t1 = time()
-    pred_top = model.predict_k(train_hot, TOP_K)
-    t2 = time()
     pred_scores = model.predict_scores(valid_hot)
+    t2 = time()
+    # pred_top = model.predict_k(train_hot, TOP_K)
     t3 = time()
     results.append({
         **{
             'name': model.get_name(),
             'train_time': t1 - t0,
-            'predict_top_time': t2 - t1,
-            'predict_all_time': t3 - t2
+            'predict_all_time': t2 - t1,
+            'predict_top_time': t3 - t2
         },
         **eval_pointwise(valid_hot, pred_scores),
-        **eval_top(valid_hot, pred_top, TOP_K),
+        # **eval_top(valid_hot, pred_top, TOP_K),
     })
 
 for model in models:
@@ -86,9 +88,9 @@ for model in models:
 results_df = pd.DataFrame.from_records(results)
 results_df['ensemble_weight'] = np.zeros(len(results_df))
 for i in range(len(ensemble.models)):
-    results_df[results_df.name == ensemble.models[i].get_name()].ensemble_weight = ensemble.ensemble_model.coef_[i]
+    results_df.loc[results_df.name == ensemble.models[i].get_name(), 'ensemble_weight'] = ensemble.ensemble_model.coef_[i]
 results_df.ensemble_weight = results_df.ensemble_weight / results_df.ensemble_weight.sum()
-results_df[results_df.name == ensemble.get_name()].ensemble_weight = 1
+results_df.loc[results_df.name == ensemble.get_name(), 'ensemble_weight'] = 1
 results_df.to_csv('results.tsv', sep='\t', index=False)
 print(results_df)
 print("Models selected: ", [x.get_name() for x in ensemble.models])

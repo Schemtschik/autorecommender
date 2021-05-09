@@ -19,12 +19,16 @@ class RecommendationDataset:
         self.timestamp_col = timestamp_col
         self.data = data
 
+    def print_stats(self):
+        print("Pairs: ", len(self.data))
+        print("Users: ", self.data[self.user_col].nunique())
+        print("Items: ", self.data[self.item_col].nunique())
+
     def load(self) -> None:
         pass
 
     def wrap_data(self, data):
         return RecommendationDataset(self.user_col, self.item_col, self.score_col, self.timestamp_col, data)
-
 
 def split_randomly(
         dataset: RecommendationDataset,
