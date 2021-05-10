@@ -17,5 +17,8 @@ dataset = RecommendationDataset(
 )
 dataset.load()
 
-trainer = Trainer()
+trainer = Trainer(
+    evaluate_top_metrics=False,
+    exclude_models={"LightGCN"}
+)
 trainer.train(dataset)

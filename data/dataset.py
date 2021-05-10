@@ -30,6 +30,7 @@ class RecommendationDataset:
     def wrap_data(self, data):
         return RecommendationDataset(self.user_col, self.item_col, self.score_col, self.timestamp_col, data)
 
+
 def split_randomly(
         dataset: RecommendationDataset,
         ratio: float

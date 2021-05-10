@@ -9,7 +9,7 @@ import cornac
 from recommenders.reco_utils.recommender.cornac.cornac_utils import predict, predict_ranking
 
 class BiVAEModel(Model):
-    def __init__(self, factors=50, epochs=500):
+    def __init__(self, factors=50, epochs=100):
         super().__init__()
         self.model = None
         self.factors = factors

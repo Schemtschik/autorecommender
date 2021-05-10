@@ -1,4 +1,5 @@
 from time import time
+from typing import List, Set
 
 import numpy as np
 import pandas as pd
@@ -21,13 +22,30 @@ from models.impl.svd import SvdModel
 TOP_K = 10
 SEED = 42
 
+BASE_MODELS = [
+    AlsModel(),
+    BiVAEModel(),
+    BPRModel(),
+    FastaiModel(),
+    LightGCNModel(TOP_K),
+    NCFModel(),
+    SarModel(),
+    SvdModel(),
+]
 
 class Trainer:
-    def __init__(self):
+    def __init__(
+            self,
+            evaluate_top_metrics: bool = True,
+            exclude_models: Set[str] = {},
+    ):
+        self.evaluate_top_metrics = evaluate_top_metrics
+        self.exclude_models = exclude_models
         np.random.seed(SEED)
         torch.manual_seed(SEED)
         torch.cuda.manual_seed(SEED)
         tf.get_logger().setLevel('ERROR')
+
     def train(
             self,
             dataset: RecommendationDataset
@@ -36,16 +54,7 @@ class Trainer:
         dataset.print_stats()
         train_hot, valid_hot = split_without_cold_start(dataset, ratio=0.75)
 
-        models = [
-            AlsModel(),
-            BiVAEModel(),
-            BPRModel(),
-            FastaiModel(),
-            LightGCNModel(TOP_K),
-            NCFModel(),
-            SarModel(),
-            SvdModel(),
-        ]
+        models = [x for x in BASE_MODELS if x.get_name() not in self.exclude_models]
 
         ensemble = EnsembleModel(models, filter_unnecessary=False)
 
@@ -61,7 +70,7 @@ class Trainer:
             t1 = time()
             pred_scores = model.predict_scores(valid_hot)
             t2 = time()
-            pred_top = model.predict_k(train_hot, TOP_K)
+            pred_top = model.predict_k(train_hot, TOP_K) if self.evaluate_top_metrics else None
             t3 = time()
             results.append({
                 **{
@@ -71,7 +80,7 @@ class Trainer:
                     'predict_top_time': t3 - t2
                 },
                 **eval_pointwise(valid_hot, pred_scores),
-                **eval_top(valid_hot, pred_top, TOP_K),
+                **(eval_top(valid_hot, pred_top, TOP_K) if self.evaluate_top_metrics else {}),
             })
 
         for model in models:
