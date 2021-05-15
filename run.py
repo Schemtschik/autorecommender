@@ -1,8 +1,13 @@
 from data.impl.movielens import MovielensDataset
 from trainer import Trainer
 
-dataset = MovielensDataset()
-dataset.load()
+if __name__ == "__main__":
+    dataset = MovielensDataset()
+    dataset.load()
 
-trainer = Trainer()
-trainer.train(dataset)
+    trainer = Trainer(
+        exclude_models={"NCF"},
+        parallel=False,
+        single_model_timeout=60, # s
+    )
+    trainer.train(dataset)

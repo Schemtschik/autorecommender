@@ -1,5 +1,9 @@
+import concurrent
+import os
 from time import time
-from typing import List, Set
+from typing import Set
+
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import pandas as pd
@@ -38,9 +42,16 @@ class Trainer:
             self,
             evaluate_top_metrics: bool = True,
             exclude_models: Set[str] = {},
+            parallel: bool = True,
+            single_model_timeout: float = None,
+            ensembling_enabled: bool = True,
     ):
         self.evaluate_top_metrics = evaluate_top_metrics
         self.exclude_models = exclude_models
+        self.parallel = parallel
+        self.executor = ThreadPoolExecutor(max_workers=os.cpu_count() if parallel else 1)
+        self.single_model_timeout = single_model_timeout
+        self.ensembling_enabled = ensembling_enabled
         np.random.seed(SEED)
         torch.manual_seed(SEED)
         torch.cuda.manual_seed(SEED)
@@ -56,43 +67,71 @@ class Trainer:
 
         models = [x for x in BASE_MODELS if x.get_name() not in self.exclude_models]
 
-        ensemble = EnsembleModel(models, filter_unnecessary=False)
-
-        results = []
 
         for model in models:
             model.on_start()
 
-        for model in models + [ensemble]:
-            print(model.get_name())
-            t0 = time()
-            model.train(train_hot)
-            t1 = time()
-            pred_scores = model.predict_scores(valid_hot)
-            t2 = time()
-            pred_top = model.predict_k(train_hot, TOP_K) if self.evaluate_top_metrics else None
-            t3 = time()
-            results.append({
-                **{
-                    'name': model.get_name(),
-                    'train_time': t1 - t0,
-                    'predict_all_time': t2 - t1,
-                    'predict_top_time': t3 - t2
-                },
-                **eval_pointwise(valid_hot, pred_scores),
-                **(eval_top(valid_hot, pred_top, TOP_K) if self.evaluate_top_metrics else {}),
-            })
+        futures = [(
+            model,
+            self.executor.submit(self._train_model, model, train_hot, valid_hot) if self.parallel else None
+        ) for model in models]
+        results = []
+        models_trained = []
+        errors = []
+        for model, future in futures:
+            if not self.parallel:
+                future = self.executor.submit(self._train_model, model, train_hot, valid_hot)
+            try:
+                result = future.result(timeout=self.single_model_timeout)
+                results.append(result)
+                models_trained.append(model)
+            except Exception as e:
+                if type(e) == concurrent.futures._base.TimeoutError:
+                    if not future.done():
+                        future.cancel()
+                    errors.append((model.get_name(), 'Timeout'))
+                    print(f"Model {model.get_name()} has timed out")
+                else:
+                    print(f"Model {model.get_name()} failed")
+                    errors.append((model.get_name(), 'Failed'))
+
+        if self.ensembling_enabled:
+            ensemble = EnsembleModel(models_trained, filter_unnecessary=False)
+            results.append(self._train_model(ensemble, train_hot, valid_hot))
 
         for model in models:
             model.on_stop()
 
         results_df = pd.DataFrame.from_records(results)
-        results_df['ensemble_weight'] = np.zeros(len(results_df))
-        for i in range(len(ensemble.models)):
-            results_df.loc[results_df.name == ensemble.models[i].get_name(), 'ensemble_weight'] = \
-                ensemble.ensemble_model.coef_[i]
-        results_df.ensemble_weight = results_df.ensemble_weight / results_df.ensemble_weight.sum()
-        results_df.loc[results_df.name == ensemble.get_name(), 'ensemble_weight'] = 1
+        if self.ensembling_enabled:
+            results_df['ensemble_weight'] = np.zeros(len(results_df))
+            for i in range(len(ensemble.models)):
+                results_df.loc[results_df.name == ensemble.models[i].get_name(), 'ensemble_weight'] = \
+                    ensemble.ensemble_model.coef_[i]
+            results_df.ensemble_weight = results_df.ensemble_weight / results_df.ensemble_weight.sum()
+            results_df.loc[results_df.name == ensemble.get_name(), 'ensemble_weight'] = 1
         results_df.to_csv('results.tsv', sep='\t', index=False)
+        print("Errors: ", errors)
         print(results_df)
-        print("Models selected: ", [x.get_name() for x in ensemble.models])
+
+    def _train_model(self, model, train_hot, valid_hot):
+        print(model.get_name() + ": start")
+        t0 = time()
+        model.train(train_hot)
+        t1 = time()
+        pred_scores = model.predict_scores(valid_hot)
+        t2 = time()
+        pred_top = model.predict_k(train_hot, TOP_K) if self.evaluate_top_metrics else None
+        t3 = time()
+        result = {
+            **{
+                'name': model.get_name(),
+                'train_time': t1 - t0,
+                'predict_all_time': t2 - t1,
+                'predict_top_time': t3 - t2
+            },
+            **eval_pointwise(valid_hot, pred_scores),
+            **(eval_top(valid_hot, pred_top, TOP_K) if self.evaluate_top_metrics else {}),
+        }
+        print(model.get_name() + ": finish")
+        return result
