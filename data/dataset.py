@@ -10,7 +10,7 @@ class RecommendationDataset:
             user_col: str,
             item_col: str,
             score_col: str,
-            timestamp_col: str,
+            timestamp_col: str = None,
             data: pd.DataFrame = None
     ):
         self.user_col = user_col
@@ -19,11 +19,16 @@ class RecommendationDataset:
         self.timestamp_col = timestamp_col
         self.data = data
 
+    def print_stats(self):
+        print("Pairs: ", len(self.data))
+        print("Users: ", self.data[self.user_col].nunique())
+        print("Items: ", self.data[self.item_col].nunique())
+
     def load(self) -> None:
-        raise NotImplementedError
+        pass
 
     def wrap_data(self, data):
-        raise NotImplementedError
+        return RecommendationDataset(self.user_col, self.item_col, self.score_col, self.timestamp_col, data)
 
 
 def split_randomly(
@@ -54,5 +59,5 @@ def split_without_cold_start(
     assert set(train[dataset.user_col].unique()) == set(dataset.data[dataset.user_col].unique())
     assert set(train[dataset.item_col].unique()) == set(dataset.data[dataset.item_col].unique())
     assert len(pd.merge(train, valid, on=[dataset.user_col, dataset.item_col], how='inner')) == 0
-    assert len(train) + len(valid) == len(dataset.data)
+    # assert len(train) + len(valid) == len(dataset.data), f"train_len={len(train)}, valid_len={len(valid)}, total_len={len(dataset.data)}"
     return dataset.wrap_data(train), dataset.wrap_data(valid)
