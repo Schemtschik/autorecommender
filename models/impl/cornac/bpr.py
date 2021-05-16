@@ -17,6 +17,9 @@ class BPRModel(Model):
     def get_name(self) -> str:
         return "BPR"
 
+    def get_params(self):
+        return f"factors={self.factors}, epochs={self.epochs}"
+
     def train(self, dataset: RecommendationDataset) -> None:
         self.model = cornac.models.BPR(
             k=self.factors,

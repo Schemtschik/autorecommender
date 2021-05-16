@@ -15,6 +15,9 @@ class SvdModel(Model):
     def get_name(self) -> str:
         return "SVD"
 
+    def get_params(self):
+        return f"epochs={self.epochs}"
+
     def train(self, dataset: RecommendationDataset) -> None:
         train_set = surprise.Dataset.load_from_df(dataset.data[[
             dataset.user_col, dataset.user_col, dataset.score_col

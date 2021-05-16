@@ -22,8 +22,8 @@ class FastaiModel(Model):
     def get_name(self) -> str:
         return "FastAI"
 
-    def is_top_predicted_by_train(self) -> bool:
-        return False
+    def get_params(self):
+        return f"epochs={self.epochs}"
 
     def train(self, dataset: RecommendationDataset) -> None:
         self.data_pd = dataset.data

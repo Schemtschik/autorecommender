@@ -8,6 +8,6 @@ if __name__ == "__main__":
     trainer = Trainer(
         exclude_models={"NCF"},
         parallel=False,
-        single_model_timeout=60, # s
+        single_model_timeout=600, # s
     )
     trainer.train(dataset)

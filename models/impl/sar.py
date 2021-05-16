@@ -13,6 +13,9 @@ class SarModel(Model):
     def get_name(self) -> str:
         return "SAR"
 
+    def get_params(self):
+        return ""
+
     def train(self, dataset: RecommendationDataset) -> None:
         self.model = SARSingleNode(
             col_user=dataset.user_col,

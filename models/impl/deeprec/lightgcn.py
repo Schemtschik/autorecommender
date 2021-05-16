@@ -18,6 +18,9 @@ class LightGCNModel(Model):
     def get_name(self) -> str:
         return "LightGCN"
 
+    def get_params(self):
+        return f"epochs={self.epochs}"
+
     def train(self, dataset: RecommendationDataset) -> None:
         hparams = prepare_hparams("./recommenders/reco_utils/recommender/deeprec/config/lightgcn.yaml",
                                   n_layers=3,

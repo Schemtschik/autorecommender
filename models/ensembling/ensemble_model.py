@@ -14,6 +14,9 @@ class EnsembleModel(Model):
     def get_name(self) -> str:
         return "Ensemble"
 
+    def get_params(self) -> str:
+        return ""
+
     def train(self, dataset: RecommendationDataset) -> None:
         self._train_once(dataset)
         if self.filter_unnecessary:

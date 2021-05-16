@@ -27,6 +27,9 @@ class AlsModel(Model):
     def get_name(self) -> str:
         return "ALS"
 
+    def get_params(self):
+        return f"epochs={self.epochs}"
+
     def _to_spark(self, df: pd.DataFrame) -> pyspark.sql.DataFrame:
         return self.spark_session.createDataFrame(df)
 

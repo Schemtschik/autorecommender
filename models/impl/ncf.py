@@ -16,6 +16,9 @@ class NCFModel(Model):
     def get_name(self) -> str:
         return "NCF"
 
+    def get_params(self):
+        return f"epochs={self.epochs}"
+
     def train(self, dataset: RecommendationDataset) -> None:
         self.model = NCF(
             n_users=dataset.data[dataset.user_col].nunique(),

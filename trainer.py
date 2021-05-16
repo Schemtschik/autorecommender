@@ -28,14 +28,26 @@ SEED = 42
 
 BASE_MODELS = [
     AlsModel(),
+    BiVAEModel(factors=20, epochs=10),
+    BiVAEModel(factors=20),
+    BiVAEModel(epochs=10),
     BiVAEModel(),
+    BPRModel(factors=64),
+    BPRModel(factors=64, epochs=10),
     BPRModel(),
+    BPRModel(epochs=10),
+    FastaiModel(epochs=1),
     FastaiModel(),
+    LightGCNModel(TOP_K, epochs=10),
     LightGCNModel(TOP_K),
+    NCFModel(epochs=1),
+    NCFModel(epochs=10),
     NCFModel(),
     SarModel(),
+    SvdModel(epochs=10),
     SvdModel(),
 ]
+
 
 class Trainer:
     def __init__(
@@ -67,7 +79,6 @@ class Trainer:
 
         models = [x for x in BASE_MODELS if x.get_name() not in self.exclude_models]
 
-
         for model in models:
             model.on_start()
 
@@ -89,11 +100,11 @@ class Trainer:
                 if type(e) == concurrent.futures._base.TimeoutError:
                     if not future.done():
                         future.cancel()
-                    errors.append((model.get_name(), 'Timeout'))
-                    print(f"Model {model.get_name()} has timed out")
+                    errors.append((model.get_name_with_params(), 'Timeout'))
+                    print(f"Model {model.get_name_with_params()} has timed out")
                 else:
-                    print(f"Model {model.get_name()} failed")
-                    errors.append((model.get_name(), 'Failed'))
+                    print(f"Model {model.get_name_with_params()} failed")
+                    errors.append((model.get_name_with_params(), 'Failed'))
 
         if self.ensembling_enabled:
             ensemble = EnsembleModel(models_trained, filter_unnecessary=False)
@@ -106,7 +117,7 @@ class Trainer:
         if self.ensembling_enabled:
             results_df['ensemble_weight'] = np.zeros(len(results_df))
             for i in range(len(ensemble.models)):
-                results_df.loc[results_df.name == ensemble.models[i].get_name(), 'ensemble_weight'] = \
+                results_df.loc[results_df.name == ensemble.models[i].get_name_with_params(), 'ensemble_weight'] = \
                     ensemble.ensemble_model.coef_[i]
             results_df.ensemble_weight = results_df.ensemble_weight / results_df.ensemble_weight.sum()
             results_df.loc[results_df.name == ensemble.get_name(), 'ensemble_weight'] = 1
@@ -115,7 +126,7 @@ class Trainer:
         print(results_df)
 
     def _train_model(self, model, train_hot, valid_hot):
-        print(model.get_name() + ": start")
+        print(model.get_name_with_params() + ": start")
         t0 = time()
         model.train(train_hot)
         t1 = time()
@@ -125,7 +136,7 @@ class Trainer:
         t3 = time()
         result = {
             **{
-                'name': model.get_name(),
+                'name': model.get_name_with_params(),
                 'train_time': t1 - t0,
                 'predict_all_time': t2 - t1,
                 'predict_top_time': t3 - t2
@@ -133,5 +144,5 @@ class Trainer:
             **eval_pointwise(valid_hot, pred_scores),
             **(eval_top(valid_hot, pred_top, TOP_K) if self.evaluate_top_metrics else {}),
         }
-        print(model.get_name() + ": finish")
+        print(model.get_name_with_params() + ": finish")
         return result

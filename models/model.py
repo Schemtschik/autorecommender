@@ -1,3 +1,5 @@
+from typing import Dict, List
+
 import pandas as pd
 from reco_utils.recommender.fastai.fastai_utils import cartesian_product
 
@@ -10,6 +12,12 @@ class Model:
 
     def get_name(self) -> str:
         raise NotImplementedError
+
+    def get_params(self) -> str:
+        raise NotImplementedError
+
+    def get_name_with_params(self) -> str:
+        return f"{self.get_name()} ({self.get_params()})"
 
     def on_start(self) -> None:
         pass
