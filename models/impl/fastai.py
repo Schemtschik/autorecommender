@@ -25,6 +25,9 @@ class FastaiModel(Model):
     def get_params(self):
         return f"epochs={self.epochs}"
 
+    def is_cold_start_appliable(self) -> bool:
+        return False
+
     def train(self, dataset: RecommendationDataset) -> None:
         self.data_pd = dataset.data
         self.data = CollabDataLoaders.from_df(

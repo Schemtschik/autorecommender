@@ -19,6 +19,9 @@ class Model:
     def get_name_with_params(self) -> str:
         return f"{self.get_name()} ({self.get_params()})"
 
+    def is_cold_start_appliable(self) -> bool:
+        return True
+
     def on_start(self) -> None:
         pass
 

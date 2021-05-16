@@ -10,7 +10,7 @@ import pandas as pd
 import tensorflow as tf
 import torch
 
-from data.dataset import split_without_cold_start, RecommendationDataset
+from data.dataset import split_without_cold_start, RecommendationDataset, split_randomly
 from data.encoded_dataset import EncodedRecommendationDataset
 from evaluation.evaluation import eval_pointwise, eval_top
 from models.ensembling.ensemble_model import EnsembleModel
@@ -57,6 +57,7 @@ class Trainer:
             parallel: bool = True,
             single_model_timeout: float = None,
             ensembling_enabled: bool = True,
+            train_without_cold_start: bool = True,
     ):
         self.evaluate_top_metrics = evaluate_top_metrics
         self.exclude_models = exclude_models
@@ -64,6 +65,7 @@ class Trainer:
         self.executor = ThreadPoolExecutor(max_workers=os.cpu_count() if parallel else 1)
         self.single_model_timeout = single_model_timeout
         self.ensembling_enabled = ensembling_enabled
+        self.train_without_cold_start = train_without_cold_start
         np.random.seed(SEED)
         torch.manual_seed(SEED)
         torch.cuda.manual_seed(SEED)
@@ -75,23 +77,27 @@ class Trainer:
     ):
         dataset = EncodedRecommendationDataset.of(dataset)
         dataset.print_stats()
-        train_hot, valid_hot = split_without_cold_start(dataset, ratio=0.75)
+        train, valid = split_without_cold_start(dataset, ratio=0.75) if self.train_without_cold_start \
+            else split_randomly(dataset, ratio=0.75)
 
-        models = [x for x in BASE_MODELS if x.get_name() not in self.exclude_models]
+        models = [x for x in BASE_MODELS
+                  if x.get_name() not in self.exclude_models
+                  and (x.is_cold_start_appliable() or self.train_without_cold_start)
+        ]
 
         for model in models:
             model.on_start()
 
         futures = [(
             model,
-            self.executor.submit(self._train_model, model, train_hot, valid_hot) if self.parallel else None
+            self.executor.submit(self._train_model, model, train, valid) if self.parallel else None
         ) for model in models]
         results = []
         models_trained = []
         errors = []
         for model, future in futures:
             if not self.parallel:
-                future = self.executor.submit(self._train_model, model, train_hot, valid_hot)
+                future = self.executor.submit(self._train_model, model, train, valid)
             try:
                 result = future.result(timeout=self.single_model_timeout)
                 results.append(result)
@@ -108,7 +114,7 @@ class Trainer:
 
         if self.ensembling_enabled:
             ensemble = EnsembleModel(models_trained, filter_unnecessary=False)
-            results.append(self._train_model(ensemble, train_hot, valid_hot))
+            results.append(self._train_model(ensemble, train, valid))
 
         for model in models:
             model.on_stop()
@@ -120,7 +126,7 @@ class Trainer:
                 results_df.loc[results_df.name == ensemble.models[i].get_name_with_params(), 'ensemble_weight'] = \
                     ensemble.ensemble_model.coef_[i]
             results_df.ensemble_weight = results_df.ensemble_weight / results_df.ensemble_weight.sum()
-            results_df.loc[results_df.name == ensemble.get_name(), 'ensemble_weight'] = 1
+            results_df.loc[results_df.name == ensemble.get_name_with_params(), 'ensemble_weight'] = 1
         results_df.to_csv('results.tsv', sep='\t', index=False)
         print("Errors: ", errors)
         print(results_df)

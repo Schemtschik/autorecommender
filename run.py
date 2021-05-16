@@ -9,5 +9,6 @@ if __name__ == "__main__":
         exclude_models={"NCF"},
         parallel=False,
         single_model_timeout=600, # s
+        train_without_cold_start=False,
     )
     trainer.train(dataset)
